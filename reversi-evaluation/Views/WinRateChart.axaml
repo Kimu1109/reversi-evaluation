@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:reversi_evaluation.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:draw="using:LiveChartsCore.SkiaSharpView.Drawing.Geometries"
+        xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="reversi_evaluation.Views.WinRateChart"
+        x:DataType="vm:ReversiViewModel"
+        Icon="/Assets/reversi-evaluation.ico"
+        Title="勝率推移ウィンドウ">
+
+    <Design.DataContext>
+        <vm:ReversiViewModel/>
+    </Design.DataContext>
+
+    <lvc:CartesianChart
+        Series="{Binding Series}"
+        XAxes="{Binding XAxes}"
+        YAxes="{Binding YAxes}"
+        Sections="{Binding Sections}"
+    >
+        
+        <lvc:CartesianChart.Title>
+            <lvc:XamlDrawnLabelVisual
+                Text="勝率推移"
+                Paint="{lvc:SolidColorPaint Color='#303030'}"
+                TextSize="25"
+                Padding="{lvc:Padding '15'}"/>
+        </lvc:CartesianChart.Title>
+
+    </lvc:CartesianChart>
+</Window>

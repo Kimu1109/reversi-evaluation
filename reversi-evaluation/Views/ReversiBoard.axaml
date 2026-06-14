@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:reversi_evaluation.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="reversi_evaluation.Views.ReversiBoard"
+             x:DataType="vm:ReversiViewModel">
+
+    <Design.DataContext>
+        <vm:ReversiViewModel/>
+    </Design.DataContext>
+
+    <!-- 1. The Viewbox ensures everything inside scales uniformly -->
+    <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+        
+        <!-- 2. Set a fixed square size here so the grid starts as a perfect square -->
+        <ItemsControl ItemsSource="{Binding BoardCells}" Width="500" Height="500" Padding="10">
+            
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Rows="8" Columns="8" Background="DarkGreen"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Button Command="{Binding $parent[UserControl].DataContext.ClickCellCommand}"
+                            CommandParameter="{Binding}"
+                            Background="Transparent" 
+                            BorderBrush="Black" 
+                            BorderThickness="1"
+                            Margin="0" 
+                            Padding="0"
+                            CornerRadius="0"
+                            HorizontalAlignment="Stretch" 
+                            VerticalAlignment="Stretch">
+
+                        <Button.Styles>
+                            <!-- ホバー時（pointerover）の設定 -->
+                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="Black" />
+                                <Setter Property="RenderTransform" Value="none" />
+                            </Style>
+                        </Button.Styles>
+                        
+                        <Ellipse Margin="10"
+                                 Fill="{Binding PieceBrush}" 
+                                 IsVisible="{Binding IsOccupied}"
+                                 Stretch="Uniform"
+                                 StrokeThickness="2"
+                                 Stroke="Black"
+                                 HorizontalAlignment="Stretch" 
+                                 VerticalAlignment="Stretch"/>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Viewbox>
+</UserControl>

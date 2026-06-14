@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:reversi_evaluation.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="reversi_evaluation.Views.PlayerInfo"
+             x:DataType="vm:ReversiViewModel">
+
+    <Design.DataContext>
+        <vm:ReversiViewModel/>
+    </Design.DataContext>
+
+    <StackPanel>
+        <StackPanel
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Margin="10, 10, 10, 30"
+        >
+            <Ellipse Width="40" Height="40" Fill="Black" Stroke="Black" StrokeThickness="2"></Ellipse>
+            <TextBox
+                Text="{Binding Player1Name}"
+                Margin="8"
+                FontSize="32"
+                FontWeight="Bold"
+                VerticalAlignment="Center"
+            />
+            <TextBlock
+                Text="対"
+                Margin="8"
+                FontSize="18"
+                VerticalAlignment="Center"
+            />
+            <TextBox
+                Text="{Binding Player2Name}"
+                Margin="8"
+                FontSize="32"
+                FontWeight="Bold"
+                VerticalAlignment="Center"
+            />
+            <Ellipse Width="40" Height="40" Fill="White" Stroke="Black" StrokeThickness="2"></Ellipse>
+        </StackPanel>
+        <StackPanel
+            HorizontalAlignment="Center"
+        >
+            <TextBlock
+                FontSize="24"
+                FontWeight="Bold"
+                Text="{Binding PlayerStatus}"
+            ></TextBlock>
+        </StackPanel>
+        <Grid Width="700" Height="40">
+            <Border
+                HorizontalAlignment="Left"
+                Width="{Binding BlackBarWidth}"
+                Background="Black" />
+
+            <Border
+                HorizontalAlignment="Right"
+                Width="{Binding WhiteBarWidth}"
+                Background="White"
+                BorderBrush="Black"
+                BorderThickness="3" />
+        </Grid>
+    </StackPanel>
+</UserControl>

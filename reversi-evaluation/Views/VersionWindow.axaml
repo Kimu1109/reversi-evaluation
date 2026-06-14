@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="300"
+        x:Class="reversi_evaluation.Views.VersionWindow"
+        Icon="/Assets/reversi-evaluation.ico"
+        Title="バージョンウィンドウ">
+
+    <StackPanel
+        HorizontalAlignment="Center"
+        Margin="8"
+    >
+        <TextBlock
+            FontSize="26"
+            FontWeight="Bold"
+            TextAlignment="Center"
+        >ReversiEvaluation</TextBlock>
+
+        <Separator/>
+
+        <TextBlock
+            FontSize="18"
+            TextAlignment="Center"
+        >ライセンス: MIT</TextBlock>
+        <TextBlock
+            FontSize="18"
+            TextAlignment="Center"
+            Margin="0,0,0,30"
+        >Edaxライセンス: GPLv3</TextBlock>
+        <TextBlock
+            FontSize="14"
+            TextAlignment="Center">
+            © 2026 K-Studio ReversiEvaluation
+        </TextBlock>
+    </StackPanel>
+</Window>

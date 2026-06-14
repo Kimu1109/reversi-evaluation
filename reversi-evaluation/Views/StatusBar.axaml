@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:reversi_evaluation.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="reversi_evaluation.Views.StatusBar"
+             x:DataType="vm:ReversiViewModel">
+
+    <Design.DataContext>
+        <vm:ReversiViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <TextBlock>黒勝率:</TextBlock>
+        <TextBlock Text="{Binding BlackPercentage}"></TextBlock>
+        <TextBlock>%</TextBlock>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>白勝率:</TextBlock>
+        <TextBlock Text="{Binding WhitePercentage}"></TextBlock>
+        <TextBlock>%</TextBlock>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>ターン:</TextBlock>
+        <TextBlock Text="{Binding TurnString}"></TextBlock>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>Edaxスコア:</TextBlock>
+        <TextBlock Text="{Binding EdaxResult}"></TextBlock>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>ターンカウント:</TextBlock>
+        <TextBlock Text="{Binding TurnCount}"/>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>黒個数:</TextBlock>
+        <TextBlock Text="{Binding BlackCount}"/>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>白個数:</TextBlock>
+        <TextBlock Text="{Binding WhiteCount}"/>
+
+        <Separator Width="1" Height="NaN" VerticalAlignment="Stretch"/>
+
+        <TextBlock>ゲーム終了か:</TextBlock>
+        <TextBlock Text="{Binding IsGameEndString}"/>
+    </DockPanel>
+</UserControl>

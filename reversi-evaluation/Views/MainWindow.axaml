@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:reversi_evaluation.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:reversi_evaluation.Views"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="reversi_evaluation.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/reversi-evaluation.ico"
+        Title="ReversiEvaluation">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="180"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <DockPanel
+            Grid.Row="0"
+        >
+            <Menu DockPanel.Dock="Top">
+                <MenuItem Header="アプリ">
+                    <MenuItem Header="アプリについて" Click="ClickVersionWindow"/>
+                    <Separator/>
+                    <MenuItem Header="終了" Click="ClickExitApp"/>
+                </MenuItem>
+                <MenuItem Header="ゲーム">
+                    <MenuItem Header="スキップ" Click="ClickTurnSkip"/>
+                    <MenuItem Header="勝率統計ウィンドウ" Click="ClickWinRateChart"/>
+                </MenuItem>
+                <MenuItem Header="ボード">
+                    <MenuItem Header="初期化" Click="ClickInitBoard"/>
+                    <Separator/>
+                    <MenuItem Header="戻す" Click="ClickHistoryBack"/>
+                    <MenuItem Header="進める" Click="ClickHistoryForward"/>
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+        <local:PlayerInfo
+            Grid.Row="1"
+            x:Name="playerInfo"
+        />
+        <local:ReversiBoard
+            Grid.Row="2"
+            x:Name="reversiBoard"
+        /> 
+        <local:StatusBar
+            Grid.Row="3"
+            x:Name="statusBar"
+        />
+    </Grid>
+
+</Window>
