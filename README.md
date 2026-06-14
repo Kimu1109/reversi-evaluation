@@ -1,6 +1,6 @@
 # ReversiEvaluation
 
-<img src="ReversiEvaluation.svg" alt="アイコン" style="zoom: 33%;" />
+<img src="ReversiEvaluation-200x200.svg" alt="アイコン" style="zoom: 33%;" />
 
 リバーシの評価アプリケーションです。  
 主に、大会や試合などで使われることを想定しています。
