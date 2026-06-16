@@ -46,8 +46,10 @@ public partial class MainWindow : Window
     }
     public void ClickWinRateChart(object sender, RoutedEventArgs e)
     {
-        var win = new WinRateChart();
-        win.SetDataContext(reversi);
+        var win = new WinRateChart()
+        {
+            DataContext = reversi
+        };
         win.Show(this);
     }
     public void ClickHistoryBack(object sender, RoutedEventArgs e)
@@ -60,6 +62,11 @@ public partial class MainWindow : Window
     }
     public void ClickEvaluationHistory(object sender, RoutedEventArgs e)
     {
-        reversi.ShowEvaluationHistoryCommand.Execute(null);
+        var win = new EvaluationHistoryWindow
+        {
+            DataContext = reversi
+        };
+
+        win.Show(this);
     }
     }

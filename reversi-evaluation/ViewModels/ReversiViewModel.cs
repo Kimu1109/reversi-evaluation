@@ -118,7 +118,7 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BlackCount))]
     [NotifyPropertyChangedFor(nameof(WhiteCount))]
-    private int _turnCount = 0;
+    private int _turnCount = 1;
 
     public int BlackBarWidth => (int)(BlackPercentage * 0.01 * 700);
     public int WhiteBarWidth => (int)(WhitePercentage * 0.01 * 700 + 2);
@@ -130,7 +130,7 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
     
     [ObservableProperty]
     private Axis[] _xAxes = [
-        new Axis { MinLimit = 0, Labeler = value => $"{value + 1:0}手目" }
+        new Axis { MinLimit = 1, Labeler = value => $"{value:0}手目" }
     ];
 
     [ObservableProperty]
@@ -250,6 +250,7 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
         WhitePercentage = 50;
         EdaxScore = 0;
         EdaxRecommendedMove = null;
+        TurnCount = 1;
 
         PutHistories.Clear();
         RecordHistory();
@@ -396,20 +397,6 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
         if (_edax != null)
         {
             await _edax.DisposeAsync();
-        }
-    }
-
-    [RelayCommand]
-    private void ShowEvaluationHistory()
-    {
-        var window = new EvaluationHistoryWindow
-        {
-            DataContext = this
-        };
-
-        if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow })
-        {
-            window.ShowDialog(mainWindow);
         }
     }
 }

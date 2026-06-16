@@ -5,7 +5,11 @@
         mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="300"
         x:Class="reversi_evaluation.Views.VersionWindow"
         Icon="/Assets/reversi-evaluation.ico"
-        Title="バージョンウィンドウ">
+        Title="バージョンウィンドウ"
+        Width="300"
+        Height="300"
+        CanResize="False"
+        >
 
     <StackPanel
         HorizontalAlignment="Center"
@@ -16,6 +20,12 @@
             FontWeight="Bold"
             TextAlignment="Center"
         >ReversiEvaluation</TextBlock>
+        <TextBlock
+            FontSize="18"
+            TextAlignment="Center"
+        >
+            Version 1.1.0
+        </TextBlock>
 
         <Separator/>
 

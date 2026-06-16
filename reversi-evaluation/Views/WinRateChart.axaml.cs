@@ -11,8 +11,4 @@ public partial class WinRateChart : Window
     {
         InitializeComponent();
     }
-    public void SetDataContext(ReversiViewModel data)
-    {
-        DataContext = data;
-    }
 }

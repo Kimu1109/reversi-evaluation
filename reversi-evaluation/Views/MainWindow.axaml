@@ -35,7 +35,7 @@
                 <MenuItem Header="ゲーム">
                     <MenuItem Header="スキップ" Click="ClickTurnSkip"/>
                     <MenuItem Header="勝率統計ウィンドウ" Click="ClickWinRateChart"/>
-                    <MenuItem Header="評価履歴" Click="ClickEvaluationHistory"/>
+                    <MenuItem Header="評価履歴ウィンドウ" Click="ClickEvaluationHistory"/>
                 </MenuItem>
                 <MenuItem Header="ボード">
                     <MenuItem Header="初期化" Click="ClickInitBoard"/>
