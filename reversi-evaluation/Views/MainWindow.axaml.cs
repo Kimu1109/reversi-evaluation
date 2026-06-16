@@ -18,8 +18,11 @@ public partial class MainWindow : Window
         this.reversiBoard.SetDataContext(reversi);
         this.statusBar.SetDataContext(reversi);
 
-        reversi.InitEdaxAsync();
+        // Initializing Edax in the background
+        _ = reversi.InitEdaxAsync();
         reversi.ResetBoard();
+
+        this.Closed += async (s, e) => await reversi.DisposeAsync();
     }
     public void ClickInitBoard(object sender, RoutedEventArgs e)
     {
@@ -39,7 +42,7 @@ public partial class MainWindow : Window
     }
     public void ClickTurnSkip(object sender, RoutedEventArgs e)
     {
-        reversi.Turn = reversi.TurnedTurn();
+        reversi.SkipTurn();
     }
     public void ClickWinRateChart(object sender, RoutedEventArgs e)
     {
