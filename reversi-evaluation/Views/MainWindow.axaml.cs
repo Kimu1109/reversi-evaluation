@@ -58,4 +58,8 @@ public partial class MainWindow : Window
     {
         reversi.HistoryForward();
     }
-}
+    public void ClickEvaluationHistory(object sender, RoutedEventArgs e)
+    {
+        reversi.ShowEvaluationHistoryCommand.Execute(null);
+    }
+    }

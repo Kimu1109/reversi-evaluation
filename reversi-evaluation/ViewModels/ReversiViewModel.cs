@@ -18,6 +18,9 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using LiveChartsCore.Drawing;
 using Microsoft.Extensions.Logging;
+using Avalonia;
+using Avalonia.Controls;
+using reversi_evaluation.Views;
 
 public partial class PutHistory : ObservableObject
 {
@@ -27,7 +30,8 @@ public partial class PutHistory : ObservableObject
         int turnCount,
         int winRateBlack,
         int winRateWhite,
-        bool isGameEnd
+        bool isGameEnd,
+        string? recommendedMove = null
     )
     {
         Board = board.ToList();
@@ -36,6 +40,7 @@ public partial class PutHistory : ObservableObject
         Turn = turn;
         TurnCount = turnCount;
         IsGameEnd = isGameEnd;
+        RecommendedMove = recommendedMove;
     }
     public List<CellState> Board { get; }
     public int WinRateBlack { get; }
@@ -43,6 +48,7 @@ public partial class PutHistory : ObservableObject
     public CellState Turn { get; }
     public int TurnCount { get; }
     public bool IsGameEnd { get; }
+    public string? RecommendedMove { get; }
 }
 
 public partial class CellViewModel : ObservableObject
@@ -94,15 +100,16 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EdaxResult))]
-    private int _edaxScore = 0;
+    private double _edaxScore = 0;
+
+    [ObservableProperty]
+    private string? _edaxRecommendedMove;
 
     public string EdaxResult => EdaxRunning ?
         "解析中" :
-        EdaxScore switch
-        {
-            int.MinValue => "失敗",
-            _ => EdaxScore.ToString()
-        };
+        EdaxScore == double.MinValue ?
+            "失敗" :
+            $"{EdaxScore:F1}";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EdaxResult))]
@@ -242,6 +249,7 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
         BlackPercentage = 50;
         WhitePercentage = 50;
         EdaxScore = 0;
+        EdaxRecommendedMove = null;
 
         PutHistories.Clear();
         RecordHistory();
@@ -270,7 +278,8 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
             TurnCount,
             BlackPercentage,
             WhitePercentage,
-            IsGameEnd
+            IsGameEnd,
+            EdaxRecommendedMove
         ));
     }
 
@@ -309,11 +318,12 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
         _game.SetBoard(history.Board.ToArray(), history.Turn, history.TurnCount, history.IsGameEnd);
         BlackPercentage = history.WinRateBlack;
         WhitePercentage = history.WinRateWhite;
+        EdaxRecommendedMove = history.RecommendedMove;
         SyncFromModel();
     }
 
     [RelayCommand]
-    private async Task ClickCell(CellViewModel clickedCell)
+    private async void ClickCell(CellViewModel clickedCell)
     {
         if (EdaxRunning || IsGameEnd) return;
 
@@ -325,6 +335,11 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
             if (!IsGameEnd && _edax != null)
             {
                 await UpdateEvaluationAsync();
+            }
+            else
+            {
+                EdaxScore = 0;
+                EdaxRecommendedMove = null;
             }
 
             // Remove future histories if we are branching
@@ -343,12 +358,17 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
     {
         if (_edax == null) return;
 
-        EdaxScore = await _edax.GetHintScoreAsync(ToEdaxSetBoardString());
-        if (EdaxScore == int.MinValue)
+        var result = await _edax.GetEvaluationAsync(ToEdaxSetBoardString());
+        if (result == null)
         {
+            EdaxScore = double.MinValue;
+            EdaxRecommendedMove = null;
             Console.WriteLine("Edax evaluation failed.");
             return;
         }
+
+        EdaxScore = result.Score;
+        EdaxRecommendedMove = result.BestMove;
 
         double winRate = WinRateCalculator.ToWinRate(EdaxScore, _game.CountCells(CellState.None));
         if (Turn == CellState.Black)
@@ -376,6 +396,20 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
         if (_edax != null)
         {
             await _edax.DisposeAsync();
+        }
+    }
+
+    [RelayCommand]
+    private void ShowEvaluationHistory()
+    {
+        var window = new EvaluationHistoryWindow
+        {
+            DataContext = this
+        };
+
+        if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow })
+        {
+            window.ShowDialog(mainWindow);
         }
     }
 }
