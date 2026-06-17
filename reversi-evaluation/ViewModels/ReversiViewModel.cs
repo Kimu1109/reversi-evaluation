@@ -17,7 +17,6 @@ using LiveChartsCore.Kernel;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using LiveChartsCore.Drawing;
-using Microsoft.Extensions.Logging;
 using Avalonia;
 using Avalonia.Controls;
 using reversi_evaluation.Views;
