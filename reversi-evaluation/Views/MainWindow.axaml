@@ -27,20 +27,25 @@
             Grid.Row="0"
         >
             <Menu DockPanel.Dock="Top">
-                <MenuItem Header="アプリ">
-                    <MenuItem Header="アプリについて" Click="ClickVersionWindow"/>
+                <MenuItem Header="ファイル">
+                    <MenuItem Header="履歴を保存..." Click="ClickSaveHistory"/>
+                    <MenuItem Header="履歴を読み込み..." Click="ClickLoadHistory"/>
                     <Separator/>
                     <MenuItem Header="終了" Click="ClickExitApp"/>
                 </MenuItem>
                 <MenuItem Header="ゲーム">
                     <MenuItem Header="スキップ" Click="ClickTurnSkip"/>
                     <MenuItem Header="勝率統計ウィンドウ" Click="ClickWinRateChart"/>
+                    <MenuItem Header="評価履歴ウィンドウ" Click="ClickEvaluationHistory"/>
                 </MenuItem>
                 <MenuItem Header="ボード">
                     <MenuItem Header="初期化" Click="ClickInitBoard"/>
                     <Separator/>
                     <MenuItem Header="戻す" Click="ClickHistoryBack"/>
                     <MenuItem Header="進める" Click="ClickHistoryForward"/>
+                </MenuItem>
+                <MenuItem Header="ヘルプ">
+                    <MenuItem Header="アプリについて" Click="ClickVersionWindow"/>
                 </MenuItem>
             </Menu>
         </DockPanel>

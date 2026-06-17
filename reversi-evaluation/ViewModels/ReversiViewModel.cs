@@ -8,6 +8,7 @@ using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using reversi_evaluation.Evaluations;
+using reversi_evaluation.Models;
 using System.Collections.Generic;
 using System.Linq;
 using LiveChartsCore;
@@ -16,59 +17,54 @@ using LiveChartsCore.Kernel;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using LiveChartsCore.Drawing;
+using Microsoft.Extensions.Logging;
+using Avalonia;
+using Avalonia.Controls;
+using reversi_evaluation.Views;
 
-public enum CellState
-{
-    None = 0,
-    Black = 1,
-    White = -1
-}
 public partial class PutHistory : ObservableObject
 {
     public PutHistory(
-        CellViewModel[] Board,
-        CellState Turn,
-        int TurnCount,
-        int WinRateBlack,
-        int WinRateWhite,
-        bool IsGameEnd
-    ){
-
-        foreach(var cell in Board)
-        {
-            this.Board.Add(cell.State);
-        }
-        this.WinRateBlack = WinRateBlack;
-        this.WinRateWhite = WinRateWhite;
-        this.Turn = Turn;
-        this.TurnCount = TurnCount;
-        this.IsGameEnd = IsGameEnd;
+        CellState[] board,
+        CellState turn,
+        int turnCount,
+        int winRateBlack,
+        int winRateWhite,
+        bool isGameEnd,
+        string? recommendedMove = null
+    )
+    {
+        Board = board.ToList();
+        WinRateBlack = winRateBlack;
+        WinRateWhite = winRateWhite;
+        Turn = turn;
+        TurnCount = turnCount;
+        IsGameEnd = isGameEnd;
+        RecommendedMove = recommendedMove;
     }
-    public List<CellState> Board {get;} = new();
-    public int WinRateBlack {get;}
-    public int WinRateWhite {get;}
-    public CellState Turn {get;}
-    public int TurnCount {get;}
-    public bool IsGameEnd {get;}
+    public List<CellState> Board { get; }
+    public int WinRateBlack { get; }
+    public int WinRateWhite { get; }
+    public CellState Turn { get; }
+    public int TurnCount { get; }
+    public bool IsGameEnd { get; }
+    public string? RecommendedMove { get; }
 }
+
 public partial class CellViewModel : ObservableObject
 {
-    public CellViewModel(int X, int Y)
+    public CellViewModel(int x, int y)
     {
-        this.X = X;
-        this.Y = Y;
+        X = x;
+        Y = y;
     }
 
-    // 1. バッキングフィールドに属性をつける
-    // [ObservableProperty] により、裏で「State」というプロパティが自動生成されます
-    // [NotifyPropertyChangedFor] で、Stateが変わったときに関連プロパティも再描画させます
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOccupied))]
     [NotifyPropertyChangedFor(nameof(PieceBrush))]
     private CellState _state = CellState.None;
 
-    // 2. Stateに依存するプロパティ（これらは get のみでOK）
-    public bool IsOccupied => State != 0;
+    public bool IsOccupied => State != CellState.None;
 
     public IBrush PieceBrush => State switch
     {
@@ -77,41 +73,43 @@ public partial class CellViewModel : ObservableObject
         _ => Brushes.Transparent
     };
 
-    public int X {get; }
-    public int Y {get; }
+    public int X { get; }
+    public int Y { get; }
 }
-public partial class ReversiViewModel : ObservableObject
+
+public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
 {
+    private readonly ReversiGame _game = new();
+    private EdaxEvaluation? _edax;
+
     [ObservableProperty]
     private string _player1Name = "プレイヤー1";
 
-    
     [ObservableProperty]
     private string _player2Name = "プレイヤー2";
-
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PlayerStatus))]
     [NotifyPropertyChangedFor(nameof(BlackBarWidth))]
     private int _blackPercentage = 50;
 
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PlayerStatus))]
     [NotifyPropertyChangedFor(nameof(WhiteBarWidth))]
     private int _whitePercentage = 50;
 
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EdaxResult))]
-    private int _edaxScore = 0;
+    private double _edaxScore = 0;
+
+    [ObservableProperty]
+    private string? _edaxRecommendedMove;
+
     public string EdaxResult => EdaxRunning ?
         "解析中" :
-        EdaxScore switch
-        {
-            int.MinValue => "失敗",
-            _ => EdaxScore.ToString()
-        };
+        EdaxScore == double.MinValue ?
+            "失敗" :
+            $"{EdaxScore:F1}";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EdaxResult))]
@@ -120,49 +118,32 @@ public partial class ReversiViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BlackCount))]
     [NotifyPropertyChangedFor(nameof(WhiteCount))]
-    private int _turnCount = 0;
+    private int _turnCount = 1;
 
     public int BlackBarWidth => (int)(BlackPercentage * 0.01 * 700);
     public int WhiteBarWidth => (int)(WhitePercentage * 0.01 * 700 + 2);
 
-    private EdaxEvaluation? _edax;
-
     public ObservableCollection<PutHistory> PutHistories { get; } = new();
 
-    //* FOR LIVE CHARTS 2
     [ObservableProperty]
     private ISeries[] _series;
+    
     [ObservableProperty]
-    private Axis[] _xAxes =
-    [
-        new Axis
-        {
-            MinLimit = 0,
-            Labeler = value => $"{value + 1:0}手目"
-        }
+    private Axis[] _xAxes = [
+        new Axis { MinLimit = 1, Labeler = value => $"{value:0}手目" }
     ];
+
     [ObservableProperty]
-    private Axis[] _yAxes =
-    [
-        new Axis
-        {
-            MinLimit = 0,
-            MaxLimit = 100,
-            Labeler = value => $"{value:0}%"
-        }
+    private Axis[] _yAxes = [
+        new Axis { MinLimit = 0, MaxLimit = 100, Labeler = value => $"{value:0}%" }
     ];
+
     [ObservableProperty]
-    private RectangularSection[] _sections =
-    [
+    private RectangularSection[] _sections = [
         new RectangularSection
         {
-            Yi = 50,
-            Yj = 50,
-            Stroke = new SolidColorPaint
-            {
-                Color = SKColors.LightGray,
-                StrokeThickness = 3
-            }
+            Yi = 50, Yj = 50,
+            Stroke = new SolidColorPaint { Color = SKColors.LightGray, StrokeThickness = 3 }
         }
     ];
 
@@ -172,380 +153,303 @@ public partial class ReversiViewModel : ObservableObject
         {
             if (IsGameEnd)
             {
-                var b = BlackCount;
-                var w = WhiteCount;
-                if(b > w)
-                    return "黒の勝ち";
-                else if(w > b)
-                    return "白の勝ち";
-                else
-                    return "引き分け";
+                int b = BlackCount;
+                int w = WhiteCount;
+                if (b > w) return "黒の勝ち";
+                if (w > b) return "白の勝ち";
+                return "引き分け";
             }
-            var diff = Math.Abs(BlackPercentage - WhitePercentage);
-            if(diff < 10)
-                return "互角";
-
-            if(diff < 25)
-                if(BlackPercentage > WhitePercentage)
-                    return "黒がやや優勢";
-                else
-                    return "白がやや優勢";
+            int diff = Math.Abs(BlackPercentage - WhitePercentage);
+            if (diff < 10) return "互角";
             
-            if(BlackPercentage > WhitePercentage)
-                return "黒が優勢";
-            else
-                return "白が優勢";
+            string leader = BlackPercentage > WhitePercentage ? "黒" : "白";
+            return diff < 25 ? $"{leader}がやや優勢" : $"{leader}が優勢";
         }
     }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TurnString))]
     public CellState _turn = CellState.Black;
+
     public string TurnString => Turn switch
     {
         CellState.White => "白",
         CellState.Black => "黒",
-        _ => "ありえない値" 
+        _ => "不明"
     };
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGameEndString))]
     [NotifyPropertyChangedFor(nameof(PlayerStatus))]
     private bool _isGameEnd = false;
+
     public string IsGameEndString => IsGameEnd ? "Y" : "N";
 
-    public int BlackCount => CountCell(CellState.Black);
-    public int WhiteCount => CountCell(CellState.White);
+    public int BlackCount => _game.CountCells(CellState.Black);
+    public int WhiteCount => _game.CountCells(CellState.White);
 
     public ObservableCollection<CellViewModel> BoardCells { get; } = new();
 
-
-    //!LOGIC部分
     public ReversiViewModel()
     {
-        for(int y = 0; y < 8; y++)
+        for (int y = 0; y < ReversiGame.BoardSize; y++)
         {
-            for(int x = 0; x < 8; x++)
+            for (int x = 0; x < ReversiGame.BoardSize; x++)
             {
                 BoardCells.Add(new CellViewModel(x, y));
             }
         }
 
-        Series =
-        [
+        Series = [
             new LineSeries<PutHistory>
             {
                 Name = "白勝率",
                 Values = PutHistories,
                 Stroke = new SolidColorPaint(SKColors.SkyBlue, 8),
                 Fill = new SolidColorPaint(SKColor.Empty),
-                Mapping = (h, i) => new Coordinate(
-                    h.TurnCount,
-                    h.WinRateWhite)
+                Mapping = (h, i) => new Coordinate(h.TurnCount, h.WinRateWhite)
             },
-
             new LineSeries<PutHistory>
             {
                 Name = "黒勝率",
                 Values = PutHistories,
                 Stroke = new SolidColorPaint(SKColors.Black, 8),
                 Fill = new SolidColorPaint(SKColor.Empty),
-                Mapping = (h, i) => new Coordinate(
-                    h.TurnCount,
-                    h.WinRateBlack)
+                Mapping = (h, i) => new Coordinate(h.TurnCount, h.WinRateBlack)
             }
         ];
     }
-    public async void InitEdaxAsync()
+
+    public async Task InitEdaxAsync()
     {
         string path;
         if (OperatingSystem.IsWindows())
-            path = AppContext.BaseDirectory + "edax\\wEdax-x86-64.exe";
-        else if(OperatingSystem.IsLinux())
-            path = AppContext.BaseDirectory + "edax/lEdax-x86-64";
+            path = Path.Combine(AppContext.BaseDirectory, "edax", "wEdax-x86-64.exe");
+        else if (OperatingSystem.IsLinux())
+            path = Path.Combine(AppContext.BaseDirectory, "edax", "lEdax-x86-64");
         else
             return;
 
-        _edax = await EdaxEvaluation.StartAsync(path, AppContext.BaseDirectory + "edax");
-        await _edax.SetLevelAsync(8);
-    }
-    public void ClearBoard()
-    {
-        for(int i = 0; i < 64; i++)
+        try
         {
-            BoardCells[i].State = CellState.None;
+            _edax = await EdaxEvaluation.StartAsync(path, Path.Combine(AppContext.BaseDirectory, "edax"));
+            await _edax.SetLevelAsync(8);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Edax initialization failed: {ex.Message}");
         }
     }
-    public bool IsSkip(CellState turn)
-    {
-        for(int x = 0; x < 8; x++)
-        {
-            for(int y = 0; y < 8; y++)
-            {
-                if(TryPut(x, y, turn, false))
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
+
     public void ResetBoard()
     {
-        ClearBoard();
-        BoardCellsAt(3, 3).State = CellState.White;
-        BoardCellsAt(4, 4).State = CellState.White;
-        BoardCellsAt(3, 4).State = CellState.Black;
-        BoardCellsAt(4, 3).State = CellState.Black;
-
+        _game.Reset();
+        SyncFromModel();
+        
         BlackPercentage = 50;
         WhitePercentage = 50;
-
         EdaxScore = 0;
-        TurnCount = 0;
-
-        IsGameEnd = false;
+        EdaxRecommendedMove = null;
+        TurnCount = 1;
 
         PutHistories.Clear();
+        RecordHistory();
+    }
+
+    private void SyncFromModel()
+    {
+        var board = _game.Board;
+        for (int i = 0; i < ReversiGame.TotalCells; i++)
+        {
+            BoardCells[i].State = board[i];
+        }
+        Turn = _game.Turn;
+        TurnCount = _game.TurnCount;
+        IsGameEnd = _game.IsGameEnd;
+        
+        OnPropertyChanged(nameof(BlackCount));
+        OnPropertyChanged(nameof(WhiteCount));
+    }
+
+    private void RecordHistory()
+    {
         PutHistories.Add(new PutHistory(
-            BoardCells.ToArray(),
+            _game.Board,
             Turn,
             TurnCount,
             BlackPercentage,
             WhitePercentage,
-            IsGameEnd
+            IsGameEnd,
+            EdaxRecommendedMove
         ));
     }
-    public bool TryPut(int x, int y, CellState state, bool is_put)
-    {
 
-        //前提条件
-        if(state == CellState.None)
-            return false;
-
-        if(!IsInBoard(x, y))
-            return false;
-
-        if(BoardCellsAt(x, y).State != CellState.None)
-            return false;
-
-
-
-        bool result = false;
-
-        //8方向繰り返す
-        for(int i = 0; i < 8; i++)
-        {
-            var move_x = 0;
-            var move_y = 0;
-
-            //方向を設定
-            switch (i)
-            {
-                case 0:
-                    move_x = -1;
-                    move_y = 0;
-                    break;
-                case 1:
-                    move_x = -1;
-                    move_y = -1;
-                    break;
-                case 2:
-                    move_x = 0;
-                    move_y = -1;
-                    break;
-                case 3:
-                    move_x = 1;
-                    move_y = -1;
-                    break;
-                case 4:
-                    move_x = 1;
-                    move_y = 0;
-                    break;
-                case 5:
-                    move_x = 1;
-                    move_y = 1;
-                    break;
-                case 6:
-                    move_x = 0;
-                    move_y = 1;
-                    break;
-                case 7:
-                    move_x = -1;
-                    move_y = 1;
-                    break;
-            }
-
-            //前提条件
-            if(!IsInBoard(x + move_x, y + move_y))
-                continue;
-            if((int)BoardCellsAt(x + move_x, y + move_y).State != -(int)state)
-                continue;
-
-            //その方向に伸ばす
-            for(int p = 2; p < 8; p++)
-            {
-                if(!IsInBoard(x + move_x * p, y + move_y * p))
-                    break;
-
-                var cell = BoardCellsAt(x + move_x * p, y + move_y * p);
-
-                if(cell.State == CellState.None)
-                    break;
-
-                if(cell.State == state)
-                {
-                    if(!is_put) return true;
-
-                    //置けるなら置く
-                    result = true;
-                    for(int q = 0; q < p; q++)
-                    {
-                        BoardCellsAt(x + move_x * q, y + move_y * q).State = state;
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        return result;
-
-    }
     public string ToEdaxSetBoardString()
     {
         var sb = new StringBuilder(65);
-
-        // A1 -> H8 の row-major
-        for (int rank = 0; rank < 8; rank++)
+        var board = _game.Board;
+        for (int i = 0; i < ReversiGame.TotalCells; i++)
         {
-            for (int file = 0; file < 8; file++)
+            sb.Append(board[i] switch
             {
-                sb.Append(BoardCellsAt(file, rank).State switch
-                {
-                    CellState.None => '-',
-                    CellState.Black => '*',
-                    CellState.White => 'O',
-                    _ => '-'
-                });
-            }
+                CellState.None => '-',
+                CellState.Black => '*',
+                CellState.White => 'O',
+                _ => '-'
+            });
         }
-
         sb.Append(Turn == CellState.Black ? '*' : 'O');
         return sb.ToString();
     }
-    private bool IsInBoard(int x, int y) => x >= 0 && x <= 7 && y >= 0 && y <= 7;
 
-    public CellViewModel BoardCellsAt(int x, int y) => BoardCells[y * 8 + x];
-    public int CountCell(CellState target)
-    {
-        int count = 0;
-        for(int i = 0; i < 64; i++)
-        {
-            if(BoardCells[i].State == target) count++;
-        }
-        return count;
-    }
-    public CellState TurnedTurn()
-    {
-        return (CellState)(-(int)Turn);
-    }
     public void HistoryBack()
     {
-        var history = PutHistories.Where(h => h.TurnCount == TurnCount - 1).ToArray();
-        if (history.Length > 0)
-            ApplyHistory(history[0]);
-    }
-    public void HistoryForward()
-    {
-        var history = PutHistories.Where(h => h.TurnCount == TurnCount + 1).ToArray();
-        if (history.Length > 0)
-            ApplyHistory(history[0]);
-    }
-    private void ApplyHistory(PutHistory history)
-    {
-        for(int i = 0; i < 64; i++)
-        {
-            BoardCells[i].State = history.Board[i];
-        }
-        Turn = history.Turn;
-        TurnCount = history.TurnCount;
-        BlackPercentage = history.WinRateBlack;
-        WhitePercentage = history.WinRateWhite;
-        IsGameEnd = history.IsGameEnd;
+        var history = PutHistories.FirstOrDefault(h => h.TurnCount == TurnCount - 1);
+        if (history != null) ApplyHistory(history);
     }
 
-    // マスがクリックされたときの処理
+    public void HistoryForward()
+    {
+        var history = PutHistories.FirstOrDefault(h => h.TurnCount == TurnCount + 1);
+        if (history != null) ApplyHistory(history);
+    }
+
+    private void ApplyHistory(PutHistory history)
+    {
+        _game.SetBoard(history.Board.ToArray(), history.Turn, history.TurnCount, history.IsGameEnd);
+        BlackPercentage = history.WinRateBlack;
+        WhitePercentage = history.WinRateWhite;
+        EdaxRecommendedMove = history.RecommendedMove;
+        SyncFromModel();
+    }
+
     [RelayCommand]
     private async void ClickCell(CellViewModel clickedCell)
     {
-        if(!EdaxRunning && TryPut(clickedCell.X, clickedCell.Y, Turn, true))
+        if (EdaxRunning || IsGameEnd) return;
+
+        if (_game.TryPut(clickedCell.X, clickedCell.Y))
         {
             EdaxRunning = true;
+            SyncFromModel();
 
-            Turn = TurnedTurn();
-            if (IsSkip(Turn))
+            if (!IsGameEnd && _edax != null)
             {
-                if (IsSkip(TurnedTurn()))
-                {
-                    IsGameEnd = true;
-                    Console.WriteLine("GAME END!");
-                }
-                Turn = TurnedTurn();
+                await UpdateEvaluationAsync();
             }
-            TurnCount++;
-
-            if (!IsGameEnd)
+            else
             {
-                if(_edax is not null)
-                {
-                    EdaxScore = await _edax.GetHintScoreAsync(this.ToEdaxSetBoardString());
-                    if(EdaxScore == int.MinValue)
-                    {
-                        BlackPercentage = 0;
-                        WhitePercentage = 0;
-                        Console.WriteLine("EDAX FAILED!");
-                    }
-                    else
-                    {
-                        double winRate = WinRateCalculator.ToWinRate(EdaxScore, CountCell(CellState.None));
-                        if(Turn == CellState.Black)
-                        {
-                            BlackPercentage = (int)winRate;
-                            WhitePercentage = 100 - (int)winRate;
-                        }
-                        else
-                        {
-                            BlackPercentage = 100 - (int)winRate;
-                            WhitePercentage = (int)winRate;
-                        }
-                        Console.WriteLine($"Score:{EdaxScore}, WinRate:{winRate}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("EDAX IS NOT STARTED!");
-                }
+                EdaxScore = 0;
+                EdaxRecommendedMove = null;
             }
 
+            // Remove future histories if we are branching
             for (int i = PutHistories.Count - 1; i >= 0; i--)
             {
                 if (PutHistories[i].TurnCount >= TurnCount)
                     PutHistories.RemoveAt(i);
             }
             
-            PutHistories.Add(new PutHistory(
-                BoardCells.ToArray(),
-                Turn,
-                TurnCount,
-                BlackPercentage,
-                WhitePercentage,
-                IsGameEnd
-            ));
-
-
-
+            RecordHistory();
             EdaxRunning = false;
         }
+    }
+
+    private async Task UpdateEvaluationAsync()
+    {
+        if (_edax == null) return;
+
+        var result = await _edax.GetEvaluationAsync(ToEdaxSetBoardString());
+        if (result == null)
+        {
+            EdaxScore = double.MinValue;
+            EdaxRecommendedMove = null;
+            Console.WriteLine("Edax evaluation failed.");
+            return;
+        }
+
+        EdaxScore = result.Score;
+        EdaxRecommendedMove = result.BestMove;
+
+        double winRate = WinRateCalculator.ToWinRate(EdaxScore, _game.CountCells(CellState.None));
+        if (Turn == CellState.Black)
+        {
+            BlackPercentage = (int)winRate;
+            WhitePercentage = 100 - (int)winRate;
+        }
+        else
+        {
+            BlackPercentage = 100 - (int)winRate;
+            WhitePercentage = (int)winRate;
+        }
+    }
+
+    public CellState TurnedTurn() => ReversiGame.Opposite(Turn);
+
+    public void SkipTurn()
+    {
+        _game.SetBoard(_game.Board, TurnedTurn(), TurnCount, _game.IsGameEnd);
+        SyncFromModel();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_edax != null)
+        {
+            await _edax.DisposeAsync();
+        }
+    }
+
+    public string SaveToSaveDataJson()
+    {
+        var saveData = new ReversiSaveData
+        {
+            Player1Name = Player1Name,
+            Player2Name = Player2Name,
+            SavedAt = System.DateTime.Now,
+            History = PutHistories.Select(h => new PutHistoryItem
+            {
+                Board = h.Board,
+                Turn = h.Turn,
+                TurnCount = h.TurnCount,
+                WinRateBlack = h.WinRateBlack,
+                WinRateWhite = h.WinRateWhite,
+                IsGameEnd = h.IsGameEnd,
+                RecommendedMove = h.RecommendedMove
+            }).ToList()
+        };
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+        return System.Text.Json.JsonSerializer.Serialize(saveData, options);
+    }
+
+    public void LoadFromSaveData(ReversiSaveData saveData)
+    {
+        if (saveData == null || saveData.History == null || saveData.History.Count == 0)
+            return;
+
+        Player1Name = saveData.Player1Name;
+        Player2Name = saveData.Player2Name;
+
+        PutHistories.Clear();
+        foreach (var item in saveData.History)
+        {
+            PutHistories.Add(new PutHistory(
+                item.Board.ToArray(),
+                item.Turn,
+                item.TurnCount,
+                item.WinRateBlack,
+                item.WinRateWhite,
+                item.IsGameEnd,
+                item.RecommendedMove
+            ));
+        }
+
+        var lastHistory = PutHistories.Last();
+        ApplyHistory(lastHistory);
     }
 }

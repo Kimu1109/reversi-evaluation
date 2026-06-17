@@ -18,8 +18,11 @@ public partial class MainWindow : Window
         this.reversiBoard.SetDataContext(reversi);
         this.statusBar.SetDataContext(reversi);
 
-        reversi.InitEdaxAsync();
+        // Initializing Edax in the background
+        _ = reversi.InitEdaxAsync();
         reversi.ResetBoard();
+
+        this.Closed += async (s, e) => await reversi.DisposeAsync();
     }
     public void ClickInitBoard(object sender, RoutedEventArgs e)
     {
@@ -39,12 +42,14 @@ public partial class MainWindow : Window
     }
     public void ClickTurnSkip(object sender, RoutedEventArgs e)
     {
-        reversi.Turn = reversi.TurnedTurn();
+        reversi.SkipTurn();
     }
     public void ClickWinRateChart(object sender, RoutedEventArgs e)
     {
-        var win = new WinRateChart();
-        win.SetDataContext(reversi);
+        var win = new WinRateChart()
+        {
+            DataContext = reversi
+        };
         win.Show(this);
     }
     public void ClickHistoryBack(object sender, RoutedEventArgs e)
@@ -54,5 +59,77 @@ public partial class MainWindow : Window
     public void ClickHistoryForward(object sender, RoutedEventArgs e)
     {
         reversi.HistoryForward();
+    }
+    public void ClickEvaluationHistory(object sender, RoutedEventArgs e)
+    {
+        var win = new EvaluationHistoryWindow
+        {
+            DataContext = reversi
+        };
+
+        win.Show(this);
+    }
+    public async void ClickSaveHistory(object sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "履歴を保存",
+            DefaultExtension = "json",
+            ShowOverwritePrompt = true,
+            FileTypeChoices = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } }
+            }
+        });
+
+        if (file != null)
+        {
+            try
+            {
+                var json = reversi.SaveToSaveDataJson();
+                await using var stream = await file.OpenWriteAsync();
+                await using var writer = new System.IO.StreamWriter(stream);
+                await writer.WriteAsync(json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save history: {ex.Message}");
+            }
+        }
+    }
+    public async void ClickLoadHistory(object sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel == null) return;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        {
+            Title = "履歴を読み込み",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new Avalonia.Platform.Storage.FilePickerFileType("JSON Files") { Patterns = new[] { "*.json" } }
+            }
+        });
+
+        if (files != null && files.Count > 0)
+        {
+            try
+            {
+                await using var stream = await files[0].OpenReadAsync();
+                var saveData = await System.Text.Json.JsonSerializer.DeserializeAsync<reversi_evaluation.Models.ReversiSaveData>(stream);
+                if (saveData != null)
+                {
+                    reversi.LoadFromSaveData(saveData);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load history: {ex.Message}");
+            }
+        }
     }
 }

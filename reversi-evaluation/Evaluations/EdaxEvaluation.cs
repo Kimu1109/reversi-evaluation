@@ -8,13 +8,16 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace reversi_evaluation.Evaluations;
 
+public record EvaluationResult(double Score, string? BestMove);
+
 public sealed class EdaxEvaluation : IAsyncDisposable
 {
-    private static readonly Regex ScoreRegex =
-        new(@"(?<!\S)(?<score>[+-]\d+)(?!\S)", RegexOptions.Compiled);
+    private static readonly Regex LineRegex =
+        new(@"(?:(?<depth>\d+|book)\b)?.*?(?<score>[+-]\d+)(?:.*?\b(?<move>[a-h][1-8])\b)?", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly string _executablePath;
     private readonly string _workingDirectory;
@@ -49,7 +52,7 @@ public sealed class EdaxEvaluation : IAsyncDisposable
         await ExecuteCommandAsync($"level {level}", cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<int> GetHintScoreAsync(
+    public async Task<EvaluationResult?> GetEvaluationAsync(
         string edaxBoardString,
         int hintDepth = 5,
         CancellationToken cancellationToken = default)
@@ -80,16 +83,46 @@ public sealed class EdaxEvaluation : IAsyncDisposable
                     await ExecuteCommandAsync($"setboard {edaxBoardString}", cancellationToken).ConfigureAwait(false);
                     var lines = await ExecuteCommandAsync($"hint {hintDepth}", cancellationToken).ConfigureAwait(false);
 
+                    var scoresForMaxDepth = new List<int>();
+                    string? firstMoveForMaxDepth = null;
+                    int maxDepthFound = -1;
+
                     foreach (var line in lines)
                     {
-                        var m = ScoreRegex.Match(line);
-                        if (m.Success && int.TryParse(m.Groups["score"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int score))
+                        var m = LineRegex.Match(line);
+                        if (m.Success)
                         {
-                            return score; // Success!
+                            string depthStr = m.Groups["depth"].Value;
+                            int depth = 0;
+                            if (depthStr.Equals("book", StringComparison.OrdinalIgnoreCase)) depth = 1000;
+                            else int.TryParse(depthStr, out depth);
+
+                            if (int.TryParse(m.Groups["score"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int score))
+                            {
+                                string? move = m.Groups["move"].Success ? m.Groups["move"].Value : null;
+
+                                if (depth > maxDepthFound)
+                                {
+                                    maxDepthFound = depth;
+                                    scoresForMaxDepth.Clear();
+                                    scoresForMaxDepth.Add(score);
+                                    firstMoveForMaxDepth = move;
+                                }
+                                else if (depth == maxDepthFound)
+                                {
+                                    scoresForMaxDepth.Add(score);
+                                }
+                            }
                         }
                     }
+
+                    if (scoresForMaxDepth.Count > 0)
+                    {
+                        double averageScore = scoresForMaxDepth.Average();
+                        return new EvaluationResult(averageScore, firstMoveForMaxDepth);
+                    }
                     
-                    Console.WriteLine("Could not find the score in the Edax output.");
+                    Console.WriteLine("Could not find the evaluation in the Edax output.");
                 }
                 catch (Exception ex)
                 {
@@ -105,7 +138,16 @@ public sealed class EdaxEvaluation : IAsyncDisposable
             }
         }
 
-        return int.MinValue;
+        return null;
+    }
+
+    public static (int x, int y)? ParseMove(string? move)
+    {
+        if (string.IsNullOrEmpty(move) || move.Length < 2) return null;
+        int x = char.ToLower(move[0]) - 'a';
+        int y = move[1] - '1';
+        if (x < 0 || x >= 8 || y < 0 || y >= 8) return null;
+        return (x, y);
     }
 
     private async Task RestartProcessAsync(CancellationToken cancellationToken)
@@ -197,8 +239,13 @@ public sealed class EdaxEvaluation : IAsyncDisposable
                             currentLine.Append(c);
                             string text = currentLine.ToString();
                             
-                            if (text == ">" || text == "> ")
+                            if (text.EndsWith("> ") || text.EndsWith(">"))
                             {
+                                string before = text.EndsWith("> ") ? text[..^2] : text[..^1];
+                                if (!string.IsNullOrEmpty(before))
+                                {
+                                    await writer.WriteAsync(before).ConfigureAwait(false);
+                                }
                                 await writer.WriteAsync(">").ConfigureAwait(false);
                                 currentLine.Clear();
                             }
@@ -282,7 +329,7 @@ public sealed class EdaxEvaluation : IAsyncDisposable
 
 public static class WinRateCalculator
 {
-    public static double ToWinRate(int score, int empties)
+    public static double ToWinRate(double score, int empties)
     {
         double k = 24.0 - (60 - empties) * 0.25;
         k = Math.Max(k, 8);
