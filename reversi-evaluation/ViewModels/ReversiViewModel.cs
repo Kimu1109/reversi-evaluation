@@ -399,4 +399,57 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
             await _edax.DisposeAsync();
         }
     }
+
+    public string SaveToSaveDataJson()
+    {
+        var saveData = new ReversiSaveData
+        {
+            Player1Name = Player1Name,
+            Player2Name = Player2Name,
+            SavedAt = System.DateTime.Now,
+            History = PutHistories.Select(h => new PutHistoryItem
+            {
+                Board = h.Board,
+                Turn = h.Turn,
+                TurnCount = h.TurnCount,
+                WinRateBlack = h.WinRateBlack,
+                WinRateWhite = h.WinRateWhite,
+                IsGameEnd = h.IsGameEnd,
+                RecommendedMove = h.RecommendedMove
+            }).ToList()
+        };
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+        return System.Text.Json.JsonSerializer.Serialize(saveData, options);
+    }
+
+    public void LoadFromSaveData(ReversiSaveData saveData)
+    {
+        if (saveData == null || saveData.History == null || saveData.History.Count == 0)
+            return;
+
+        Player1Name = saveData.Player1Name;
+        Player2Name = saveData.Player2Name;
+
+        PutHistories.Clear();
+        foreach (var item in saveData.History)
+        {
+            PutHistories.Add(new PutHistory(
+                item.Board.ToArray(),
+                item.Turn,
+                item.TurnCount,
+                item.WinRateBlack,
+                item.WinRateWhite,
+                item.IsGameEnd,
+                item.RecommendedMove
+            ));
+        }
+
+        var lastHistory = PutHistories.Last();
+        ApplyHistory(lastHistory);
+    }
 }
