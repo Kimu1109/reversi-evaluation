@@ -240,9 +240,9 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
         }
     }
 
-    public void ResetBoard()
+    public void ResetBoard(bool isFlipBoard)
     {
-        _game.Reset();
+        _game.Reset(isFlipBoard);
         SyncFromModel();
         
         BlackPercentage = 50;

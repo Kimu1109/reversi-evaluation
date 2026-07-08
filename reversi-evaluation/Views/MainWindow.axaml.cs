@@ -20,13 +20,17 @@ public partial class MainWindow : Window
 
         // Initializing Edax in the background
         _ = reversi.InitEdaxAsync();
-        reversi.ResetBoard();
+        reversi.ResetBoard(false);
 
         this.Closed += async (s, e) => await reversi.DisposeAsync();
     }
     public void ClickInitBoard(object sender, RoutedEventArgs e)
     {
-        reversi.ResetBoard();
+        reversi.ResetBoard(false);
+    }
+    public void ClickInitFlipBoard(object sender, RoutedEventArgs e)
+    {
+        reversi.ResetBoard(true);
     }
     public void ClickVersionWindow(object sender, RoutedEventArgs e)
     {

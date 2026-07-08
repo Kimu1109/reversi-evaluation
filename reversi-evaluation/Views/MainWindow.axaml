@@ -43,6 +43,8 @@
                     <Separator/>
                     <MenuItem Header="戻す" Click="ClickHistoryBack"/>
                     <MenuItem Header="進める" Click="ClickHistoryForward"/>
+                    <Separator/>
+                    <MenuItem Header="反転した盤面で初期化" Click="ClickInitFlipBoard"/>
                 </MenuItem>
                 <MenuItem Header="ヘルプ">
                     <MenuItem Header="アプリについて" Click="ClickVersionWindow"/>
