@@ -31,16 +31,27 @@ public class ReversiGame
 
     public ReversiGame()
     {
-        Reset();
+        Reset(false);
     }
 
-    public void Reset()
+    public void Reset(bool isFlipBoard)
     {
         Array.Fill(_board, CellState.None);
-        SetCell(3, 3, CellState.White);
-        SetCell(4, 4, CellState.White);
-        SetCell(3, 4, CellState.Black);
-        SetCell(4, 3, CellState.Black);
+
+        if (isFlipBoard)
+        {
+            SetCell(3, 3, CellState.Black);
+            SetCell(4, 4, CellState.Black);
+            SetCell(3, 4, CellState.White);
+            SetCell(4, 3, CellState.White);   
+        }
+        else
+        {
+            SetCell(3, 3, CellState.White);
+            SetCell(4, 4, CellState.White);
+            SetCell(3, 4, CellState.Black);
+            SetCell(4, 3, CellState.Black);   
+        }
 
         Turn = CellState.Black;
         TurnCount = 0;
