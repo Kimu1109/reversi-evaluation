@@ -69,12 +69,12 @@ echo "ZIP win-x64"
 zip -r win-x64.zip win-x64
 
 echo "TAR.GZ linux-64"
-tar -zcvf linux-64.tar.gz linux-x64
+tar -zcvf linux-x64.tar.gz linux-x64
 
 echo "ZIP win-x64-selfcontained"
 zip -r win-x64-selfcontained.zip win-x64-selfcontained
 
 echo "TAR.GZ linux-64-selfcontained"
-tar -zcvf linux-64-selfcontained.tar.gz linux-x64-selfcontained
+tar -zcvf linux-x64-selfcontained.tar.gz linux-x64-selfcontained
 
 echo "FINISH!"
