@@ -18,6 +18,16 @@ public partial class MainWindow : Window
         this.reversiBoard.SetDataContext(reversi);
         this.statusBar.SetDataContext(reversi);
 
+        // Synchronize CheckBox with reversi.ShowCoordinates
+        ShowCoordinatesCheckBox.IsChecked = reversi.ShowCoordinates;
+        reversi.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(ReversiViewModel.ShowCoordinates))
+            {
+                ShowCoordinatesCheckBox.IsChecked = reversi.ShowCoordinates;
+            }
+        };
+
         // Initializing Edax in the background
         _ = reversi.InitEdaxAsync();
         reversi.ResetBoard(false);
@@ -135,5 +145,9 @@ public partial class MainWindow : Window
                 Console.WriteLine($"Failed to load history: {ex.Message}");
             }
         }
+    }
+    public void ClickToggleCoordinates(object sender, RoutedEventArgs e)
+    {
+        reversi.ShowCoordinates = !reversi.ShowCoordinates;
     }
 }

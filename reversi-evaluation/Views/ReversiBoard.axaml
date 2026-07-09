@@ -15,47 +15,99 @@
     <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
         
         <!-- 2. Set a fixed square size here so the grid starts as a perfect square -->
-        <ItemsControl ItemsSource="{Binding BoardCells}" Width="500" Height="500" Padding="10">
+        <Grid Width="540" Height="540" RowDefinitions="Auto,*,Auto" ColumnDefinitions="Auto,*,Auto">
             
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <UniformGrid Rows="8" Columns="8" Background="DarkGreen"/>
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+            <!-- 上：A〜H -->
+            <UniformGrid Grid.Row="0" Grid.Column="1" Columns="8" Height="25" Margin="10,0" IsVisible="{Binding ShowCoordinates}">
+                <TextBlock Text="A" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="B" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="C" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="D" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="E" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="F" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="G" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="H" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </UniformGrid>
 
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Button Command="{Binding $parent[UserControl].DataContext.ClickCellCommand}"
-                            CommandParameter="{Binding}"
-                            Background="Transparent" 
-                            BorderBrush="Black" 
-                            BorderThickness="1"
-                            Margin="0" 
-                            Padding="0"
-                            CornerRadius="0"
-                            HorizontalAlignment="Stretch" 
-                            VerticalAlignment="Stretch">
+            <!-- 左：1〜8 -->
+            <UniformGrid Grid.Row="1" Grid.Column="0" Rows="8" Width="25" Margin="0,10" IsVisible="{Binding ShowCoordinates}">
+                <TextBlock Text="1" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="2" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="3" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="4" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="5" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="6" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="7" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="8" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </UniformGrid>
 
-                        <Button.Styles>
-                            <!-- ホバー時（pointerover）の設定 -->
-                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-                                <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="BorderBrush" Value="Black" />
-                                <Setter Property="RenderTransform" Value="none" />
-                            </Style>
-                        </Button.Styles>
-                        
-                        <Ellipse Margin="10"
-                                 Fill="{Binding PieceBrush}" 
-                                 IsVisible="{Binding IsOccupied}"
-                                 Stretch="Uniform"
-                                 StrokeThickness="2"
-                                 Stroke="Black"
-                                 HorizontalAlignment="Stretch" 
-                                 VerticalAlignment="Stretch"/>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            <!-- 右：1〜8 -->
+            <UniformGrid Grid.Row="1" Grid.Column="2" Rows="8" Width="25" Margin="0,10" IsVisible="{Binding ShowCoordinates}">
+                <TextBlock Text="1" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="2" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="3" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="4" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="5" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="6" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="7" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="8" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </UniformGrid>
+
+            <!-- 下：A〜H -->
+            <UniformGrid Grid.Row="2" Grid.Column="1" Columns="8" Height="25" Margin="10,0" IsVisible="{Binding ShowCoordinates}">
+                <TextBlock Text="A" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="B" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="C" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="D" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="E" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="F" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="G" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="H" FontSize="14" FontWeight="Bold" Foreground="DarkGray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </UniformGrid>
+
+            <!-- 中央：盤面 -->
+            <ItemsControl Grid.Row="1" Grid.Column="1" ItemsSource="{Binding BoardCells}" Padding="10">
+                
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="8" Columns="8" Background="DarkGreen"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding $parent[UserControl].DataContext.ClickCellCommand}"
+                                CommandParameter="{Binding}"
+                                Background="Transparent" 
+                                BorderBrush="Black" 
+                                BorderThickness="1"
+                                Margin="0" 
+                                Padding="0"
+                                CornerRadius="0"
+                                HorizontalAlignment="Stretch" 
+                                VerticalAlignment="Stretch">
+
+                            <Button.Styles>
+                                <!-- ホバー時（pointerover）の設定 -->
+                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderBrush" Value="Black" />
+                                    <Setter Property="RenderTransform" Value="none" />
+                                </Style>
+                            </Button.Styles>
+                            
+                            <Ellipse Margin="10"
+                                     Fill="{Binding PieceBrush}" 
+                                     IsVisible="{Binding IsOccupied}"
+                                     Stretch="Uniform"
+                                     StrokeThickness="2"
+                                     Stroke="Black"
+                                     HorizontalAlignment="Stretch" 
+                                     VerticalAlignment="Stretch"/>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
     </Viewbox>
 </UserControl>
