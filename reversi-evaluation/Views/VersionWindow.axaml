@@ -24,7 +24,7 @@
             FontSize="18"
             TextAlignment="Center"
         >
-            Version 1.2.0
+            Version 1.3.0
         </TextBlock>
 
         <Separator/>
