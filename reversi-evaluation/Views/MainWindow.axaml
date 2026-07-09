@@ -45,6 +45,12 @@
                     <MenuItem Header="進める" Click="ClickHistoryForward"/>
                     <Separator/>
                     <MenuItem Header="反転した盤面で初期化" Click="ClickInitFlipBoard"/>
+                    <Separator/>
+                    <MenuItem Header="座標を表示" Click="ClickToggleCoordinates">
+                        <MenuItem.Icon>
+                            <CheckBox x:Name="ShowCoordinatesCheckBox" IsHitTestVisible="False"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                 </MenuItem>
                 <MenuItem Header="ヘルプ">
                     <MenuItem Header="アプリについて" Click="ClickVersionWindow"/>

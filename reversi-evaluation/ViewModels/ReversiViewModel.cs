@@ -115,6 +115,9 @@ public partial class ReversiViewModel : ObservableObject, IAsyncDisposable
     private bool _edaxRunning = false;
 
     [ObservableProperty]
+    private bool _showCoordinates = false;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BlackCount))]
     [NotifyPropertyChangedFor(nameof(WhiteCount))]
     private int _turnCount = 1;
