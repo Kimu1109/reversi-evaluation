@@ -68,7 +68,7 @@ public partial class MainWindow : Window
     {
         var win = new EvaluationHistoryWindow
         {
-            DataContext = reversi
+            DataContext = new EvaluationHistoryWindowViewModel(reversi.PutHistories)
         };
 
         win.Show(this);
